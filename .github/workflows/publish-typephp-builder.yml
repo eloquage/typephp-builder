@@ -59,6 +59,14 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Make GHCR package public
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api --method PATCH \
+            /orgs/eloquage/packages/container/typephp-builder/visibility \
+            -f visibility=public
+
       - name: Smoke tpc and PHPX
         run: |
           docker pull "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
