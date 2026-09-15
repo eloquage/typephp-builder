@@ -59,13 +59,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Make GHCR package public
+      - name: Grant vector-ext GHCR package access
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh api --method PATCH \
-            /orgs/eloquage/packages/container/typephp-builder/visibility \
-            -f visibility=public
+          gh api --method PUT \
+            /orgs/eloquage/packages/container/typephp-builder/repositories/1371829298
 
       - name: Smoke tpc and PHPX
         run: |
