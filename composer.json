@@ -1,0 +1,15 @@
+{
+    "name": "eloquage/typephp-builder",
+    "description": "Shared TypePHP ext-mode builder image and reusable native CI for Eloquage path packages. Not a consumer runtime dependency.",
+    "license": "MIT",
+    "keywords": [
+        "Eloquage",
+        "TypePHP",
+        "docker"
+    ],
+    "homepage": "https://github.com/eloquage/typephp-builder",
+    "support": {
+        "issues": "https://github.com/eloquage/typephp-builder/issues",
+        "source": "https://github.com/eloquage/typephp-builder"
+    }
+}

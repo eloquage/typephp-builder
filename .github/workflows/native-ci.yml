@@ -1,0 +1,59 @@
+# Compile mode: ext, load eloquage_<package>.so into the builder PHP, run Pest.
+# Called from path packages on v* tags. No continue-on-error.
+
+name: Native CI
+
+on:
+  workflow_call:
+
+env:
+  TYPEPHP_IMAGE: ghcr.io/eloquage/typephp-builder:latest
+
+jobs:
+  native:
+    name: Compile, load, Pest
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull TypePHP builder
+        run: docker pull "$TYPEPHP_IMAGE"
+
+      - name: Compile extension, load it, and run Pest
+        env:
+          PKG: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -e PKG="$PKG" \
+            -v "$PWD":/src \
+            -w /src \
+            "$TYPEPHP_IMAGE" \
+            bash -lc '
+              set -euo pipefail
+              git config --global --add safe.directory /src || true
+              test -f project.yml || cp project.yml.example project.yml
+              tpc.php project.yml
+              shopt -s nullglob
+              sos=(eloquage_*.so build/eloquage_*.so)
+              test "${#sos[@]}" -ge 1
+              SO="${sos[0]}"
+              test -f "$SO"
+              composer install --prefer-dist --no-interaction --no-progress
+              EXT_PATH="/src/${SO#./}"
+              export LD_LIBRARY_PATH="${PHPX_HOME}/lib:${LD_LIBRARY_PATH:-}"
+              php -d "extension=${EXT_PATH}" -r "exit((extension_loaded(\"typephp_eloquage_${PKG}\") || extension_loaded(\"eloquage_${PKG}\")) ? 0 : 1);"
+              php -d "extension=${EXT_PATH}" vendor/bin/pest --ci --no-coverage
+            '

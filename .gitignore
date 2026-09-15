@@ -1,0 +1,5 @@
+vendor/
+*.so
+*.dll
+project.yml
+build/
