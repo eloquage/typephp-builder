@@ -1,0 +1,36 @@
+name: Test TypePHP builder
+
+on:
+  pull_request:
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - '.github/workflows/native-ci.yml'
+      - '.github/workflows/test-builder.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          load: true
+          push: false
+          tags: eloquage/typephp-builder:pr
+
+      - name: Smoke test compiler and PHPX
+        run: |
+          docker run --rm eloquage/typephp-builder:pr tpc.php --version
+          docker run --rm eloquage/typephp-builder:pr \
+            test -s /opt/typephp/vendor/swoole/phpx/lib/libphpx.so

@@ -41,7 +41,7 @@ jobs:
             -v "$PWD":/src \
             -w /src \
             "$TYPEPHP_IMAGE" \
-            bash -lc '
+            bash -c '
               set -euo pipefail
               git config --global --add safe.directory /src || true
               test -f project.yml || cp project.yml.example project.yml

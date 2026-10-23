@@ -1,26 +1,47 @@
-# TypePHP builder (`eloquage/typephp-builder`)
+# TypePHP Builder
 
-Shared Docker image and reusable GitHub Actions for compiling Eloquage path packages as TypePHP **extensions** (`mode: ext`). This package is not a Composer runtime dependency and has no public PHP API.
+![TypePHP Builder](art/banner.png)
 
-## Image
+Shared Docker image and reusable GitHub Actions for compiling Eloquage path packages as TypePHP extensions (`mode: ext`). This repository is build infrastructure, not a Composer runtime dependency.
 
-Published as `ghcr.io/eloquage/typephp-builder` (tags: short `TYPEPHP_REF` SHA + `latest`).
+The image contains PHP 8.5 CLI, `tpc`, and `libphpx.so`. It does not build PHP Embed or `libphp.so`.
+
+## Run the builder
+
+Pull the published image and check the compiler:
 
 ```bash
 docker pull ghcr.io/eloquage/typephp-builder:latest
-# or: docker build -t eloquage-typephp-builder -f packages/typephp-builder/Dockerfile packages/typephp-builder
+docker run --rm ghcr.io/eloquage/typephp-builder:latest tpc.php --help
 ```
 
-The image includes PHP 8.5 CLI, `tpc`, and `libphpx.so`. It does not build PHP Embed / `libphp.so`. Do not Composer-require `swoole/typephp` in path packages.
-
-This repo does **not** compile itself with `tpc` (no `project.yml.example`).
-
-## Reusable native CI
-
-Path packages call `.github/workflows/native-ci.yml` on `v*` tags (pin `@v1`). That job compiles `mode: ext`, loads `eloquage_<package>.so` into the same PHP, and runs Pest. Compile, load, or test failure fails the job.
-
-## Local compile (harness)
+Build the image from this repository instead:
 
 ```bash
-docker/typephp/build-package.sh vector
+docker build -t eloquage-typephp-builder .
+docker run --rm eloquage-typephp-builder tpc.php --help
 ```
+
+The publish workflow tags the image with the pinned TypePHP source commit and `latest`. Set `TYPEPHP_REF` in `.github/workflows/publish-typephp-builder.yml` to update that source revision.
+
+## Use native CI in a path package
+
+Call the reusable workflow from your package repository. It compiles the extension, loads it into PHP, then runs Pest:
+
+```yaml
+name: Native CI
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  native:
+    uses: eloquage/typephp-builder/.github/workflows/native-ci.yml@v1
+```
+
+The caller needs a `project.yml.example` describing an extension build and a Pest suite. The workflow compiles the extension, loads it into PHP, and runs Pest when the caller pushes a `v*` release tag.
+
+## Scope
+
+This repository does not compile itself with `tpc`; it has no `project.yml.example` or public PHP API. Do not add `swoole/typephp` to consuming packages' Composer requirements.
